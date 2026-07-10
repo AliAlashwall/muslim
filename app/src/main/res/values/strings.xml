@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Muslim</string>
+    <string name="prayer_times">مواقيت الصلاة</string>
+    <string name="exact_times_by_location">أوقات دقيقة حسب موقعك</string>
+    <string name="enabled">مفعل</string>
+    <string name="remaining_time">الوقت المتبقي</string>
+    <string name="not_enabled">غير مفعل</string>
 </resources>
