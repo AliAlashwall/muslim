@@ -35,10 +35,10 @@ enum class PrayerIcon {
  * @param remainingFraction     only used for the CURRENT prayer, 0f..1f, drives the progress bar
  */
 data class PrayerUiState(
-    val id: String,
-    val name: String,
-    val time: String,
-    val icon: PrayerIcon,
+    val id: String = "1",
+    val name: String = "",
+    val time: String = "",
+    val icon: PrayerIcon = PrayerIcon.FAJR,
     val status: PrayerStatus = PrayerStatus.UPCOMING,
     val hasNotificationToggle: Boolean = true,
     val isNotificationEnabled: Boolean = true,
