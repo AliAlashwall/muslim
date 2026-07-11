@@ -18,16 +18,16 @@ class PrayerTimesRepositoryImpl @Inject constructor(
     private val httpClient: HttpClient
 ) : PrayerTimesRepository {
 
-    override suspend fun getPrayerTimesForMonth(): APIResult<PrayerTimesForMonth> {
+    override suspend fun getPrayerTimesCurrentDay(currentDay: String): APIResult<PrayerTimesForMonth> {
         return try {
             val prayerTimesForMonth = httpClient.get("prayer-time") {
                 parameter("api_key", Constants.API_KEY)
-                parameter("date", "2026-07-11")
+                parameter("date", currentDay)
                 parameter("lat", "30.7833")
                 parameter("lon", "31.0000")
                 parameter("method", "3")
                 parameter("school", "1")
-//
+
             }.body<PrayerTimesForMonthDTO>().toDomain()
 
             APIResult.Success(prayerTimesForMonth)

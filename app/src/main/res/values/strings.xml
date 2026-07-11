@@ -5,4 +5,5 @@
     <string name="enabled">مفعل</string>
     <string name="remaining_time">الوقت المتبقي</string>
     <string name="not_enabled">غير مفعل</string>
+    <string name="coming">قادمة</string>
 </resources>

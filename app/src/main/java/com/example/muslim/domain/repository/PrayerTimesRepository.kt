@@ -4,5 +4,5 @@ import com.example.muslim.domain.model.PrayerTimesForMonth
 import com.example.muslim.domain.util.APIResult
 
 interface PrayerTimesRepository {
-    suspend fun getPrayerTimesForMonth(): APIResult<PrayerTimesForMonth>
+    suspend fun getPrayerTimesCurrentDay(currentDay: String): APIResult<PrayerTimesForMonth>
 }

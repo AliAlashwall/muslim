@@ -1,5 +1,7 @@
 package com.example.muslim.presentation.screens.prayerTimes
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -19,19 +21,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -46,10 +50,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.muslim.R
 import com.example.muslim.presentation.components.PrayerIconBadge
 import com.example.muslim.presentation.components.SettingsIconButton
+import com.example.muslim.presentation.designSystem.theme.MuslimTheme
 import com.example.muslim.presentation.designSystem.theme.Theme
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 
 private val GoldAccent = Color(0xFFE2B33F)
@@ -57,23 +66,52 @@ private val ScreenBackground = Color(0xFFF4F3F1)
 private val TextMuted = Color(0xFFA3A3A3)
 private val ToggleGreenOn = Color(0xFF2FA671)
 
-
-/**
- * Stateless prayer-times screen. Feed it fresh [PrayerHeaderInfo] / [PrayerUiState]
- * data - e.g. from a ViewModel's StateFlow backed by your prayer-times API - and
- * it just renders it. No networking, persistence, or "current prayer" logic
- * happens in here; that all belongs upstream, closer to your data source.
- */
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PrayerTimesScreen(
-    header: PrayerHeaderInfo,
-    prayers: List<PrayerUiState>,
+    modifier: Modifier = Modifier,
+    viewModel: PrayerTimesViewModel = hiltViewModel(),
     onSettingsClick: () -> Unit = {},
     onToggleNotification: (id: String, enabled: Boolean) -> Unit = { _, _ -> },
-    modifier: Modifier = Modifier
+) {
+    LaunchedEffect(Unit) {
+        val currentDate = LocalDate.now().format(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        )?:"2026-07-1"
+        viewModel.getPrayerTimes(currentDate)
+    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    if (uiState.isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Theme.colors.primary)
+        }
+    } else if (uiState.error != null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(text = uiState.error ?: "Unknown Error", color = Color.Red)
+        }
+    } else {
+        uiState.header?.let { header ->
+            PrayerTimesContent(
+                modifier = modifier,
+                header = header,
+                prayers = uiState.prayers,
+                onSettingsClick = onSettingsClick,
+                onToggleNotification = onToggleNotification
+            )
+        }
+    }
+}
+
+@Composable
+fun PrayerTimesContent(
+    modifier: Modifier = Modifier,
+    header: PrayerHeaderInfo,
+    prayers: List<PrayerItem>,
+    onSettingsClick: () -> Unit = {},
+    onToggleNotification: (id: String, enabled: Boolean) -> Unit = { _, _ -> },
 ) {
     // The design is Arabic-first, so lay the whole screen out right-to-left.
-    // This also mirrors the Material icons/switch automatically.
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
             modifier = modifier
@@ -124,17 +162,16 @@ fun PrayerHeaderSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding() // keeps content clear of the status bar under edge-to-edge
+                .statusBarsPadding()
                 .padding(horizontal = 20.dp)
                 .padding(top = 12.dp, bottom = 28.dp)
         ) {
-            // Top row: arrow at the right edge, title centered, settings at the left edge (RTL).
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
                     tint = Theme.colors.onPrimary,
                     modifier = Modifier.size(22.dp)
@@ -161,7 +198,6 @@ fun PrayerHeaderSection(
 
             Spacer(Modifier.height(18.dp))
 
-            // Location pill.
             Surface(
                 color = Theme.colors.onPrimary.copy(alpha = 0.14f),
                 shape = RoundedCornerShape(24.dp),
@@ -191,7 +227,6 @@ fun PrayerHeaderSection(
 
             Spacer(Modifier.height(16.dp))
 
-            // Gregorian / Hijri date card.
             Surface(
                 color = Theme.colors.onPrimary.copy(alpha = 0.10f),
                 shape = RoundedCornerShape(20.dp),
@@ -233,8 +268,8 @@ fun PrayerHeaderSection(
 
 
 @Composable
-private fun PrayerRowCard(
-    prayer: PrayerUiState,
+fun PrayerRowCard(
+    prayer: PrayerItem,
     onToggle: (String, Boolean) -> Unit
 ) {
     val isCurrent = prayer.status == PrayerStatus.CURRENT
@@ -259,7 +294,6 @@ private fun PrayerRowCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon + name/status - lands on the right edge under RTL.
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PrayerIconBadge(icon = prayer.icon, isCurrent = isCurrent)
                 Spacer(Modifier.width(12.dp))
@@ -281,7 +315,7 @@ private fun PrayerRowCard(
 
                         prayer.status == PrayerStatus.UPCOMING ->
                             Text(
-                                text = "قادمة",
+                                text = stringResource(R.string.coming),
                                 color = mutedColor,
                                 style = Theme.textStyle.label.small
                             )
@@ -289,7 +323,6 @@ private fun PrayerRowCard(
                 }
             }
 
-            // Time + toggle - lands on the left edge under RTL.
             Column {
                 Text(
                     text = prayer.time,
@@ -341,7 +374,6 @@ private fun PrayerRowCard(
             }
         }
 
-        // Extra "time remaining" footer, only for the current prayer.
         if (isCurrent) {
             val remaining = prayer.remainingFraction
             if (remaining != null) {
@@ -383,10 +415,10 @@ private fun PrayerRowCard(
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun PrayerTimesScreenPreview() {
-    MaterialTheme {
-        PrayerTimesScreen(
-            header = sampleHeaderInfo(),
-            prayers = samplePrayerTimes()
+    MuslimTheme {
+        PrayerTimesContent(
+            header = mockHeaderInfo(),
+            prayers = mockPrayerTimes()
         )
     }
 }
