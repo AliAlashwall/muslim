@@ -4,89 +4,63 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.muslim.domain.repository.PrayerTimesRepository
+import com.example.muslim.domain.usecase.GetPrayerTimesUseCase
 import com.example.muslim.domain.util.APIResult
-import com.example.muslim.util.convertENDayToAr
-import com.example.muslim.util.convertENMonthToAr
-import com.example.muslim.util.time12Hour
+import com.example.muslim.presentation.mapper.toHeaderInfo
+import com.example.muslim.presentation.mapper.toPrayerItems
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
 class PrayerTimesViewModel @Inject constructor(
-    private val prayerTimesRepository: PrayerTimesRepository
+    private val getPrayerTimesUseCase: GetPrayerTimesUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PrayerTimesUiState())
     val uiState: StateFlow<PrayerTimesUiState> = _uiState.asStateFlow()
 
+    init {
+        getCurrentDateTime()
 
+        getPrayerTimes(_uiState.value.currentDate)
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun getCurrentDateTime() {
+        val currentDateTime =
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                ?: "2026-07-1 04:30"
+        _uiState.update {
+            it.copy(
+                currentDate = currentDateTime.substringBefore(" "),
+                currentTime = currentDateTime.substringAfter(" ")
+            )
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun getPrayerTimes(currentDate: String) {
         _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch(Dispatchers.IO) {
-            when (val result = prayerTimesRepository.getPrayerTimesCurrentDay(currentDate)) {
+        viewModelScope.launch {
+            when (val result = getPrayerTimesUseCase.invoke(currentDate)) {
                 is APIResult.Success -> {
                     val todayData = result.data.data
                     if (todayData != null) {
-                        val prayers = listOf(
-                            PrayerItem(
-                                id = "fajr",
-                                name = "الفجر",
-                                time = todayData.times.Fajr.substringBefore(" "),
-                                icon = PrayerIcon.FAJR,
-                                status = PrayerStatus.UPCOMING
-                            ),
-                            PrayerItem(
-                                id = "dhuhr",
-                                name = "الظهر",
-                                time = todayData.times.Dhuhr.substringBefore(" ").time12Hour(),
-                                icon = PrayerIcon.DHUHR,
-                                status = PrayerStatus.UPCOMING
-                            ),
-                            PrayerItem(
-                                id = "asr",
-                                name = "العصر",
-                                time = todayData.times.Asr.substringBefore(" ").time12Hour(),
-                                icon = PrayerIcon.ASR,
-                                status = PrayerStatus.UPCOMING
-                            ),
-                            PrayerItem(
-                                id = "maghrib",
-                                name = "المغرب",
-                                time = todayData.times.Maghrib.substringBefore(" ").time12Hour(),
-                                icon = PrayerIcon.MAGHRIB,
-                                status = PrayerStatus.UPCOMING
-                            ),
-                            PrayerItem(
-                                id = "isha",
-                                name = "العشاء",
-                                time = todayData.times.Isha.substringBefore(" ").time12Hour(),
-                                icon = PrayerIcon.ISHA,
-                                status = PrayerStatus.UPCOMING
-                            )
-                        )
-
-                        val header = PrayerHeaderInfo(
-                            locationLabel = "القاهرة، مصر",
-                            dayOfWeek = todayData.date.gregorian.weekday.en.convertENDayToAr(),
-                            gregorianDate = "${todayData.date.gregorian.day}  ${todayData.date.gregorian.month.en.convertENMonthToAr()}  ${todayData.date.gregorian.year}",
-                            hijriDate = "${todayData.date.hijri.day} ${todayData.date.hijri.month.ar} ${todayData.date.hijri.year}"
-                        )
-
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                header = header,
-                                prayers = prayers,
+                                header = todayData.toHeaderInfo(),
+                                prayers = todayData.toPrayerItems(),
                                 error = null
                             )
                         }
