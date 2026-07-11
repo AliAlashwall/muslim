@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.muslim.presentation.designSystem.theme.MuslimTheme
 import com.example.muslim.presentation.screens.prayerTimes.PrayerTimesScreen
+import com.example.muslim.presentation.screens.prayerTimes.PrayerTimesViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -24,7 +26,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             MuslimTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    val viewModel: PrayerTimesViewModel = hiltViewModel()
                     PrayerTimesScreen(
+                        viewModel = viewModel,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)

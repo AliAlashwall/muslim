@@ -22,8 +22,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -34,7 +34,6 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,15 +49,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.muslim.R
 import com.example.muslim.presentation.components.PrayerIconBadge
 import com.example.muslim.presentation.components.SettingsIconButton
 import com.example.muslim.presentation.designSystem.theme.MuslimTheme
 import com.example.muslim.presentation.designSystem.theme.Theme
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 
 private val GoldAccent = Color(0xFFE2B33F)
@@ -70,16 +66,11 @@ private val ToggleGreenOn = Color(0xFF2FA671)
 @Composable
 fun PrayerTimesScreen(
     modifier: Modifier = Modifier,
-    viewModel: PrayerTimesViewModel = hiltViewModel(),
+    viewModel: PrayerTimesViewModel,
     onSettingsClick: () -> Unit = {},
     onToggleNotification: (id: String, enabled: Boolean) -> Unit = { _, _ -> },
 ) {
-    LaunchedEffect(Unit) {
-        val currentDate = LocalDate.now().format(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        )?:"2026-07-1"
-        viewModel.getPrayerTimes(currentDate)
-    }
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     if (uiState.isLoading) {
@@ -174,19 +165,18 @@ fun PrayerHeaderSection(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
                     tint = Theme.colors.onPrimary,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(16.dp)
                 )
+                Spacer(Modifier.width(12.dp))
                 Column(
                     modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.Start
                 ) {
                     Text(
                         text = stringResource(R.string.prayer_times),
                         color = Theme.colors.onPrimary,
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.Bold
+                        style = Theme.textStyle.title.medium,
                     )
-                    Spacer(Modifier.height(3.dp))
                     Text(
                         text = stringResource(R.string.exact_times_by_location),
                         color = Theme.colors.onPrimary.copy(alpha = 0.75f),
@@ -207,20 +197,20 @@ fun PrayerHeaderSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 12.dp, horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Icon(
+                        imageVector = Icons.Outlined.LocationOn,
+                        contentDescription = null,
+                        tint = Theme.colors.onPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
                     Text(
                         text = header.locationLabel,
                         color = Theme.colors.onPrimary,
                         fontSize = 13.sp
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Filled.LocationOn,
-                        contentDescription = null,
-                        tint = Theme.colors.onPrimary,
-                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
@@ -416,9 +406,6 @@ fun PrayerRowCard(
 @Composable
 private fun PrayerTimesScreenPreview() {
     MuslimTheme {
-        PrayerTimesContent(
-            header = mockHeaderInfo(),
-            prayers = mockPrayerTimes()
-        )
+        PrayerHeaderSection(header = mockHeaderInfo(), onSettingsClick = {})
     }
 }
