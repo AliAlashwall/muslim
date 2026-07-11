@@ -6,28 +6,25 @@ import com.example.muslim.domain.model.*
 fun PrayerTimesForMonthDTO.toDomain(): PrayerTimesForMonth {
     return PrayerTimesForMonth(
         code = code ?: 0,
-        data = data?.map { it.toDomain() } ?: emptyList(),
-        qibla = qibla?.toDomain() ?: Qibla(Direction(false, 0.0, ""), Distance("", 0.0)),
-        status = status ?: "",
-        timezone = timezone?.toDomain() ?: Timezone("", "", "")
+        data = data?.toDomain(),
+        status = status ?: ""
     )
 }
 
 fun DataDTO.toDomain(): Data {
     return Data(
-        date = date,
-        hijri_date = hijriDate.toDomain(),
-        prohibited_times = prohibitedTimes.toDomain(),
-        times = times.toDomain()
+        date = date.toDomain(),
+        prohibitedTimes = prohibitedTimes.toDomain(),
+        times = times.toDomain(),
     )
 }
 
-fun HijriDateDTO.toDomain(): HijriDate {
-    return HijriDate(
-        gregorian = gregorian.toDomain(),
-        hijri = hijri.toDomain(),
+fun DateDTO.toDomain(): Date {
+    return Date(
         readable = readable,
-        timestamp = timestamp
+        timestamp = timestamp,
+        gregorian = gregorian.toDomain(),
+        hijri = hijri.toDomain()
     )
 }
 
@@ -140,32 +137,3 @@ fun TimesDTO.toDomain(): Times {
     )
 }
 
-fun QiblaDTO.toDomain(): Qibla {
-    return Qibla(
-        direction = direction.toDomain(),
-        distance = distance.toDomain()
-    )
-}
-
-fun DirectionDTO.toDomain(): Direction {
-    return Direction(
-        clockwise = clockwise,
-        degrees = degrees,
-        from = from
-    )
-}
-
-fun DistanceDTO.toDomain(): Distance {
-    return Distance(
-        unit = unit,
-        value = value
-    )
-}
-
-fun TimezoneDTO.toDomain(): Timezone {
-    return Timezone(
-        abbreviation = abbreviation,
-        name = name,
-        utc_offset = utcOffset
-    )
-}
