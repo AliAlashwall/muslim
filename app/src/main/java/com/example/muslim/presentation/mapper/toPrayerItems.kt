@@ -6,7 +6,6 @@ import com.example.muslim.domain.model.Data
 import com.example.muslim.presentation.screens.prayerTimes.PrayerHeaderInfo
 import com.example.muslim.presentation.screens.prayerTimes.PrayerIcon
 import com.example.muslim.presentation.screens.prayerTimes.PrayerItem
-import com.example.muslim.presentation.screens.prayerTimes.PrayerStatus
 import com.example.muslim.util.Constants
 import com.example.muslim.util.convertENDayToAr
 import com.example.muslim.util.convertENMonthToAr
@@ -14,41 +13,37 @@ import com.example.muslim.util.time12Hour
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun Data.toPrayerItems(): List<PrayerItem> {
+
     return listOf(
         PrayerItem(
             1,
             Constants.FAJR,
-            times.Fajr.toDisplayTime(),
+            times.Fajr,
             PrayerIcon.FAJR,
-            PrayerStatus.UPCOMING
         ),
         PrayerItem(
             2,
             Constants.DHUHR,
-            times.Dhuhr.toDisplayTime(),
+            time = times.Dhuhr,
             PrayerIcon.DHUHR,
-            PrayerStatus.UPCOMING
         ),
         PrayerItem(
             3,
             Constants.ASR,
-            times.Asr.toDisplayTime(),
+            times.Asr,
             PrayerIcon.ASR,
-            PrayerStatus.UPCOMING
         ),
         PrayerItem(
             4,
             Constants.MAGHRIB,
-            times.Maghrib.toDisplayTime(),
+            times.Maghrib,
             PrayerIcon.MAGHRIB,
-            PrayerStatus.UPCOMING
         ),
         PrayerItem(
             5,
             Constants.ISHA,
-            times.Isha.toDisplayTime(),
+            times.Isha,
             PrayerIcon.ISHA,
-            PrayerStatus.UPCOMING
         ),
     )
 }
@@ -79,7 +74,7 @@ fun Data.toHeaderInfo(): PrayerHeaderInfo {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-private fun String.toDisplayTime(): String = substringBefore(" ").time12Hour()
+fun String.toDisplayTime(): String = substringBefore(" ").time12Hour()
 
-fun String.getHours(): Int = substringBefore(":").toInt()
+fun String.get24Hours(): Int = substringBefore(":").toInt()
 fun String.getMinutes(): Int = substringAfter(":").toInt()
