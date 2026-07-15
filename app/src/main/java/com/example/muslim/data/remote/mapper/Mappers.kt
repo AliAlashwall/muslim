@@ -3,8 +3,8 @@ package com.example.muslim.data.remote.mapper
 import com.example.muslim.data.remote.dto.*
 import com.example.muslim.domain.model.*
 
-fun PrayerTimesForMonthDTO.toDomain(): PrayerTimesForMonth {
-    return PrayerTimesForMonth(
+fun PrayerTimesPerDayDTO.toDomain(): PrayerTimesPerDay {
+    return PrayerTimesPerDay(
         code = code ?: 0,
         data = data?.toDomain(),
         status = status ?: ""
