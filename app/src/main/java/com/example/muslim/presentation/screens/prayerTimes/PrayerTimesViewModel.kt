@@ -276,7 +276,8 @@ class PrayerTimesViewModel @Inject constructor(
         val targetDate = try {
             LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         } catch (e: Exception) {
-            Log.e("PrayerTimesViewModel", "Error parsing date: ${e.message}")
+            Log.d("PrayerTimesViewModel", "Error parsing date: ${e.message}")
+            todayDate
         }
         val currentTime = now.toLocalTime()
 
