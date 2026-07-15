@@ -1,5 +1,6 @@
 package com.example.muslim.presentation.screens.prayerTimes
 
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -19,21 +20,23 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,14 +54,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.muslim.R
+import com.example.muslim.data.local.database.entity.AlarmEntity
 import com.example.muslim.presentation.components.PrayerIconBadge
 import com.example.muslim.presentation.components.SettingsIconButton
 import com.example.muslim.presentation.designSystem.theme.MuslimTheme
 import com.example.muslim.presentation.designSystem.theme.Theme
+import com.example.muslim.presentation.mapper.get24Hours
+import com.example.muslim.presentation.mapper.getMinutes
+import com.example.muslim.presentation.mapper.toDisplayTime
+import com.example.muslim.presentation.mapper.toPrayerAr
+import kotlinx.coroutines.delay
 
 
-private val GoldAccent = Color(0xFFE2B33F)
-private val ScreenBackground = Color(0xFFF4F3F1)
 private val TextMuted = Color(0xFFA3A3A3)
 private val ToggleGreenOn = Color(0xFF2FA671)
 
@@ -68,7 +75,6 @@ fun PrayerTimesScreen(
     modifier: Modifier = Modifier,
     viewModel: PrayerTimesViewModel,
     onSettingsClick: () -> Unit = {},
-    onToggleNotification: (id: String, enabled: Boolean) -> Unit = { _, _ -> },
 ) {
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -87,32 +93,58 @@ fun PrayerTimesScreen(
                 modifier = modifier,
                 header = header,
                 prayers = uiState.prayers,
+                remainingTime = uiState.remainingTime ?: "",
                 onSettingsClick = onSettingsClick,
-                onToggleNotification = onToggleNotification
+                getPrayerNotifState = { viewModel.getPrayerNotifState(it) },
+                onToggleNotification = { alarm, value -> viewModel.toggleAlarm(alarm, value) },
+                updateRemainingTime = { viewModel.updateRemainingTime(it) }
             )
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+@SuppressLint("CoroutineCreationDuringComposition", "AutoboxingStateCreation")
 @Composable
 fun PrayerTimesContent(
     modifier: Modifier = Modifier,
     header: PrayerHeaderInfo,
     prayers: List<PrayerItem>,
+    remainingTime: String,
+    getPrayerNotifState: (String) -> Boolean,
     onSettingsClick: () -> Unit = {},
-    onToggleNotification: (id: String, enabled: Boolean) -> Unit = { _, _ -> },
+    onToggleNotification: (alarm: AlarmEntity, enabled: Boolean) -> Unit,
+    updateRemainingTime: (String) -> Unit
 ) {
+    val closestPrayerTime = prayers.find { it.status == PrayerStatus.CLOSEST }?.time
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(closestPrayerTime) {
+        while (closestPrayerTime != null) {
+            updateRemainingTime(closestPrayerTime)
+            // Wait until the next minute starts to update again
+            delay(60000L - (System.currentTimeMillis() % 60000L))
+        }
+    }
     // The design is Arabic-first, so lay the whole screen out right-to-left.
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .background(ScreenBackground)
+                .background(Theme.colors.background)
         ) {
             PrayerHeaderSection(header = header, onSettingsClick = onSettingsClick)
 
+            // Fixed: Moved animateScrollToItem into a LaunchedEffect
+            LaunchedEffect(prayers) {
+                val closestIndex = prayers.indexOfFirst { it.status == PrayerStatus.CLOSEST }
+                if (closestIndex != -1) {
+                    listState.animateScrollToItem(closestIndex)
+                }
+            }
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                state = listState,
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     end = 16.dp,
@@ -133,7 +165,11 @@ fun PrayerTimesContent(
                     }
                 }
                 items(prayers, key = { it.id }) { prayer ->
-                    PrayerRowCard(prayer = prayer, onToggle = onToggleNotification)
+                    PrayerRowCard(
+                        prayer = prayer, onToggle = onToggleNotification,
+                        getPrayerNotifState = { getPrayerNotifState(it) },
+                        remainingTime = remainingTime,
+                    )
                 }
             }
         }
@@ -257,106 +293,127 @@ fun PrayerHeaderSection(
 }
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PrayerRowCard(
     prayer: PrayerItem,
-    onToggle: (String, Boolean) -> Unit
+    getPrayerNotifState: (String) -> Boolean,
+    onToggle: (AlarmEntity, Boolean) -> Unit,
+    remainingTime: String? = "",
 ) {
-    val isCurrent = prayer.status == PrayerStatus.CURRENT
-    val titleColor = if (isCurrent) Theme.colors.onPrimary else Theme.colors.onSurface
-    val mutedColor = if (isCurrent) Theme.colors.onPrimary.copy(alpha = 0.85f) else TextMuted
+    val isCLOSEST = remember { prayer.status == PrayerStatus.CLOSEST }
+    val titleColor = if (isCLOSEST) Theme.colors.onPrimary else Theme.colors.onSurface
+    val mutedColor = if (isCLOSEST) Theme.colors.onPrimary.copy(alpha = 0.85f) else TextMuted
+    val isEnabled =
+        remember(getPrayerNotifState) { mutableStateOf(getPrayerNotifState(prayer.name)) }
 
-    Column(
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(if (isCurrent) Theme.colors.primary else Theme.colors.surface)
-            .then(
-                if (isCurrent)
-                    Modifier.border(2.dp, GoldAccent, RoundedCornerShape(20.dp))
-                else
-                    Modifier
-            )
-            .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                PrayerIconBadge(icon = prayer.icon, isCurrent = isCurrent)
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = prayer.name,
-                        color = titleColor,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    when {
-                        isCurrent && prayer.countdownLabel != null ->
-                            Text(
-                                text = "• ${prayer.countdownLabel}",
-                                color = mutedColor,
-                                style = Theme.textStyle.label.small
-                            )
 
-                        prayer.status == PrayerStatus.UPCOMING ->
-                            Text(
-                                text = stringResource(R.string.coming),
-                                color = mutedColor,
-                                style = Theme.textStyle.label.small
-                            )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(if (isCLOSEST) Theme.colors.primary else Theme.colors.surface)
+                .then(
+                    if (isCLOSEST)
+                        Modifier.border(2.dp, Theme.colors.secondary, RoundedCornerShape(20.dp))
+                    else
+                        Modifier
+                )
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    PrayerIconBadge(icon = prayer.icon, isClosest = isCLOSEST)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = prayer.name.toPrayerAr(),
+                            color = titleColor,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        when {
+                            isCLOSEST && remainingTime != "" ->
+                                Text(
+                                    text = "متبقى $remainingTime",
+                                    color = mutedColor,
+                                    style = Theme.textStyle.label.small
+                                )
+
+                            prayer.status == PrayerStatus.UPCOMING ->
+                                Text(
+                                    text = stringResource(R.string.coming),
+                                    color = mutedColor,
+                                    style = Theme.textStyle.label.small
+                                )
+                        }
                     }
                 }
-            }
 
-            Column {
-                Text(
-                    text = prayer.time,
-                    color = titleColor,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                val isEnabled = remember { mutableStateOf(prayer.isNotificationEnabled) }
-                if (prayer.hasNotificationToggle) {
-                    Spacer(Modifier.height(6.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = if (isEnabled.value) {
-                                stringResource(R.string.enabled)
-                            } else stringResource(R.string.not_enabled),
-                            color = mutedColor,
-                            fontSize = 11.sp
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Switch(
-                            checked = isEnabled.value,
-                            onCheckedChange = {
-                                isEnabled.value = !isEnabled.value
-                                onToggle(prayer.id, it)
-                            },
-                            modifier = Modifier.scale(0.75f),
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Theme.colors.onPrimary,
-                                checkedTrackColor = if (isCurrent) Theme.colors.onPrimary.copy(alpha = 0.45f) else ToggleGreenOn,
-                                checkedBorderColor = Color.Transparent,
-                                uncheckedThumbColor = Theme.colors.onPrimary,
-                                uncheckedTrackColor = if (isCurrent) Theme.colors.onPrimary.copy(
-                                    alpha = 0.25f
-                                ) else Color(0xFFDEDEDA),
-                                uncheckedBorderColor = Color.Transparent
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = prayer.time.toDisplayTime(),
+                        color = titleColor,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (prayer.hasNotificationToggle) {
+                        Spacer(Modifier.height(6.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (isEnabled.value) {
+                                    stringResource(R.string.enabled)
+                                } else stringResource(R.string.not_enabled),
+                                color = mutedColor,
+                                fontSize = 11.sp
                             )
-                        )
-                        if (isCurrent) {
+                            Spacer(Modifier.width(6.dp))
+                            Switch(
+                                checked = isEnabled.value,
+                                onCheckedChange = {
+                                    isEnabled.value = !isEnabled.value
+                                    val alarm = AlarmEntity(
+                                        id = prayer.id,
+                                        date = "",
+                                        hour = prayer.time.get24Hours(),
+                                        minute = prayer.time.getMinutes(),
+                                        label = prayer.name,
+                                        isEnabled = it
+                                    )
+                                    onToggle(alarm, it)
+                                },
+                                modifier = Modifier.scale(0.75f),
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Theme.colors.onPrimary,
+                                    checkedTrackColor = if (isCLOSEST) Theme.colors.onPrimary.copy(
+                                        alpha = 0.45f
+                                    ) else ToggleGreenOn,
+                                    checkedBorderColor = Color.Transparent,
+                                    uncheckedThumbColor = Theme.colors.onPrimary,
+                                    uncheckedTrackColor = if (isCLOSEST) Theme.colors.onPrimary.copy(
+                                        alpha = 0.25f
+                                    ) else Color(0xFFDEDEDA),
+                                    uncheckedBorderColor = Color.Transparent
+                                )
+                            )
+
                             Spacer(Modifier.width(4.dp))
                             Icon(
-                                imageVector = Icons.Filled.Notifications,
+                                imageVector = if (isEnabled.value) Icons.Outlined.Notifications else Icons.Outlined.NotificationsOff,
                                 contentDescription = null,
-                                tint = Theme.colors.onPrimary,
-                                modifier = Modifier.size(14.dp)
+                                tint = if (isCLOSEST) Theme.colors.onPrimary else Theme.colors.onSurface,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
@@ -364,48 +421,39 @@ fun PrayerRowCard(
             }
         }
 
-        if (isCurrent) {
-            val remaining = prayer.remainingFraction
-            if (remaining != null) {
-                Spacer(Modifier.height(14.dp))
-                HorizontalDivider(color = Theme.colors.onPrimary.copy(alpha = 0.2f))
-                Spacer(Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = stringResource(R.string.remaining_time),
-                        color = Theme.colors.onPrimary.copy(alpha = 0.85f),
-                        style = Theme.textStyle.label.small
-                    )
-                    Text(
-                        text = "${(remaining * 100).toInt()}%",
-                        color = Theme.colors.onPrimary,
-                        style = Theme.textStyle.label.small,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                LinearProgressIndicator(
-                    progress = { remaining },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(50)),
-                    color = GoldAccent,
-                    trackColor = Theme.colors.onPrimary.copy(alpha = 0.25f)
-                )
-            }
-        }
+
     }
 }
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun PrayerTimesScreenPreview() {
     MuslimTheme {
         PrayerHeaderSection(header = mockHeaderInfo(), onSettingsClick = {})
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Preview
+@Composable
+private fun PrayerRowCardPreview() {
+    MuslimTheme {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            PrayerRowCard(
+                prayer = PrayerItem(
+                    id = 1,
+                    name = "الفجر",
+                    time = "5:15",
+                    icon = PrayerIcon.FAJR,
+                    status = PrayerStatus.UPCOMING,
+
+                    ),
+                getPrayerNotifState = { true },
+                onToggle = { _, _ -> },
+                "20 دقيقة",
+            )
+        }
     }
 }

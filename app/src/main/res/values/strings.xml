@@ -7,4 +7,6 @@
     <string name="not_enabled">غير مفعل</string>
     <string name="coming">قادمة</string>
     <string name="settings">الإعدادات</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="kaaba_image">Kaaba image</string>
 </resources>
