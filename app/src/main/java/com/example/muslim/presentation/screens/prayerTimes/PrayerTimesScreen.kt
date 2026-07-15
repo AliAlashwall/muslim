@@ -425,7 +425,6 @@ fun PrayerRowCard(
     }
 }
 
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
