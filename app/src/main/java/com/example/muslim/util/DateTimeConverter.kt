@@ -25,16 +25,23 @@ fun String.convertENMonthToAr(): String {
 
 
 fun String.convertENDayToAr(): String {
-    return when (this) {
-        "Saturday" -> "السبت"
-        "Sunday" -> "الأحد"
-        "Monday" -> "الإثنين"
-        "Tuesday" -> "الثلاثاء"
-        "Wednesday" -> "الأربعاء"
-        "Thursday" -> "الخميس"
-        "Friday" -> "الجمعة"
+    return when (this.lowercase()) {
+        "saturday" -> "السبت"
+        "sunday" -> "الأحد"
+        "monday" -> "الإثنين"
+        "tuesday" -> "الثلاثاء"
+        "wednesday" -> "الأربعاء"
+        "thursday" -> "الخميس"
+        "friday" -> "الجمعة"
         else -> this
     }
+}
+
+fun String.toArabicDigits(): String {
+    val arabicDigits = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
+    return this.map { ch ->
+        if (ch in '0'..'9') arabicDigits[ch.code - 48] else ch
+    }.joinToString("")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -43,4 +50,9 @@ fun String.time12Hour(): String {
     val time24 = LocalTime.of(hour24.toInt(), minute.toInt())
     val formatter = DateTimeFormatter.ofPattern("hh:mm")
     return time24.format(formatter)
+}
+
+fun String.time24Hour(): String {
+    val (hour24, minute) = this.split(":")
+    return "$hour24:$minute"
 }
