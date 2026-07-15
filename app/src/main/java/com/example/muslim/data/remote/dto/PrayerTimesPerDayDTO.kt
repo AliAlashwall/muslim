@@ -5,7 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PrayerTimesForMonthDTO(
+data class PrayerTimesPerDayDTO(
     @SerialName("code")
     val code: Int? = null,
     @SerialName("data")

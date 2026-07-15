@@ -1,5 +1,13 @@
 package com.example.muslim.presentation.screens.prayerTimes
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import com.example.muslim.util.convertENDayToAr
+import java.time.LocalDate
+import java.time.chrono.HijrahDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
 
 data class PrayerTimesUiState(
     val header: PrayerHeaderInfo? = null,
@@ -7,25 +15,35 @@ data class PrayerTimesUiState(
     val currentDate: String = "2026-07-01",
     val currentTime: String = "",
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isFajrNotifEnable: Boolean = true,
+    val isDhuhrNotifEnable: Boolean = true,
+    val isAsrNotifEnable: Boolean = true,
+    val isMaghribNotifEnable: Boolean = true,
+    val isIshaNotifEnable: Boolean = true,
+    val fajrStatus: PrayerStatus = PrayerStatus.UPCOMING,
+    val dhuhrStatus: PrayerStatus = PrayerStatus.UPCOMING,
+    val asrStatus: PrayerStatus = PrayerStatus.UPCOMING,
+    val maghribStatus: PrayerStatus = PrayerStatus.UPCOMING,
+    val ishaStatus: PrayerStatus = PrayerStatus.UPCOMING,
+    val remainingTime: String? = null,
 )
 
 enum class PrayerStatus {
     PAST,
-    CURRENT,
+    CLOSEST,
     UPCOMING
 }
 
 data class PrayerItem(
-    val id: String,
+    val id: Int,
     val name: String,
     val time: String,
     val icon: PrayerIcon,
     val status: PrayerStatus = PrayerStatus.UPCOMING,
     val hasNotificationToggle: Boolean = true,
-    val isNotificationEnabled: Boolean = true,
-    val countdownLabel: String? = null,
-    val remainingFraction: Float? = null
+    val remainingMinutesValue: Int? = null,
+    val isEnable: Boolean? = null
 )
 
 data class PrayerHeaderInfo(
@@ -39,21 +57,37 @@ enum class PrayerIcon {
     FAJR, SUNRISE, DHUHR, ASR, MAGHRIB, ISHA
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+fun getCachedHeaderInfo(): PrayerHeaderInfo {
+    val locale = Locale("ar")
+
+    val gregorianFormatter =
+        DateTimeFormatter.ofPattern("d MMMM yyyy", locale)
+
+    val hijriFormatter =
+        DateTimeFormatter.ofPattern("d MMMM yyyy", locale)
+
+    val gregorian = LocalDate.now().format(gregorianFormatter)
+    val hijri = HijrahDate.now().format(hijriFormatter)
+    return PrayerHeaderInfo(
+        locationLabel = "القاهرة، مصر",
+        dayOfWeek = LocalDate.now().dayOfWeek.name.convertENDayToAr(),
+        gregorianDate = gregorian,
+        hijriDate = hijri
+    )
+}
 
 // ---------------------------------------------------------------------
 // Sample data matching the design mock.
 // ---------------------------------------------------------------------
 
-fun mockHeaderInfo() = PrayerHeaderInfo(
-    locationLabel = "القاهرة، مصر",
-    dayOfWeek = "الثلاثاء",
-    gregorianDate = "21 يوليو 2026",
-    hijriDate = "28 ربيع الثاني 1447"
-)
+@RequiresApi(Build.VERSION_CODES.O)
+fun mockHeaderInfo() = getCachedHeaderInfo()
 
-fun mockPrayerTimes() = listOf(
+
+/*fun mockPrayerTimes() = listOf(
     PrayerItem(
-        id = "fajr",
+        id = 1,
         name = "الفجر",
         time = "5:15",
         icon = PrayerIcon.FAJR,
@@ -61,15 +95,7 @@ fun mockPrayerTimes() = listOf(
         isNotificationEnabled = false
     ),
     PrayerItem(
-        id = "sunrise",
-        name = "الشروق",
-        time = "6:45",
-        icon = PrayerIcon.SUNRISE,
-        status = PrayerStatus.PAST,
-        hasNotificationToggle = false
-    ),
-    PrayerItem(
-        id = "dhuhr",
+        id = 2,
         name = "الظهر",
         time = "12:30",
         icon = PrayerIcon.DHUHR,
@@ -79,7 +105,7 @@ fun mockPrayerTimes() = listOf(
         remainingFraction = 0.45f
     ),
     PrayerItem(
-        id = "asr",
+        id = 3,
         name = "العصر",
         time = "3:45",
         icon = PrayerIcon.ASR,
@@ -87,7 +113,7 @@ fun mockPrayerTimes() = listOf(
         isNotificationEnabled = true
     ),
     PrayerItem(
-        id = "maghrib",
+        id = 4,
         name = "المغرب",
         time = "6:15",
         icon = PrayerIcon.MAGHRIB,
@@ -95,11 +121,11 @@ fun mockPrayerTimes() = listOf(
         isNotificationEnabled = true
     ),
     PrayerItem(
-        id = "isha",
+        id = 5,
         name = "العشاء",
         time = "7:45",
         icon = PrayerIcon.ISHA,
         status = PrayerStatus.UPCOMING,
         isNotificationEnabled = true
     )
-)
+)*/
