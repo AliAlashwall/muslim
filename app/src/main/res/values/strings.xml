@@ -9,4 +9,7 @@
     <string name="settings">الإعدادات</string>
     <string name="dismiss">Dismiss</string>
     <string name="kaaba_image">Kaaba image</string>
+    <string name="moshaf_sharif">المصحف الشريف</string>
+    <string name="aya_of_the_day">آية اليوم</string>
+    <string name="next_prayer">الصلاة القادمة</string>
 </resources>

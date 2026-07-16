@@ -77,55 +77,6 @@ fun getCachedHeaderInfo(): PrayerHeaderInfo {
     )
 }
 
-// ---------------------------------------------------------------------
-// Sample data matching the design mock.
-// ---------------------------------------------------------------------
-
 @RequiresApi(Build.VERSION_CODES.O)
 fun mockHeaderInfo() = getCachedHeaderInfo()
 
-
-/*fun mockPrayerTimes() = listOf(
-    PrayerItem(
-        id = 1,
-        name = "الفجر",
-        time = "5:15",
-        icon = PrayerIcon.FAJR,
-        status = PrayerStatus.PAST,
-        isNotificationEnabled = false
-    ),
-    PrayerItem(
-        id = 2,
-        name = "الظهر",
-        time = "12:30",
-        icon = PrayerIcon.DHUHR,
-        status = PrayerStatus.CURRENT,
-        isNotificationEnabled = true,
-        countdownLabel = "بعد ساعة و 15 دقيقة",
-        remainingFraction = 0.45f
-    ),
-    PrayerItem(
-        id = 3,
-        name = "العصر",
-        time = "3:45",
-        icon = PrayerIcon.ASR,
-        status = PrayerStatus.UPCOMING,
-        isNotificationEnabled = true
-    ),
-    PrayerItem(
-        id = 4,
-        name = "المغرب",
-        time = "6:15",
-        icon = PrayerIcon.MAGHRIB,
-        status = PrayerStatus.UPCOMING,
-        isNotificationEnabled = true
-    ),
-    PrayerItem(
-        id = 5,
-        name = "العشاء",
-        time = "7:45",
-        icon = PrayerIcon.ISHA,
-        status = PrayerStatus.UPCOMING,
-        isNotificationEnabled = true
-    )
-)*/

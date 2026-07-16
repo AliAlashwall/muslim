@@ -18,15 +18,20 @@ import com.example.muslim.presentation.screens.prayerTimes.PrayerIcon
 private val IconBadgeLight = Color(0xFFF1F0EB)
 
 @Composable
-fun PrayerIconBadge(icon: PrayerIcon, isClosest: Boolean) {
+fun PrayerIconBadge(
+    modifier: Modifier = Modifier,
+    icon: PrayerIcon,
+    iconSize: Int = 19,
+    isClosest: Boolean = false
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(44.dp)
             .clip(CircleShape)
             .background(if (isClosest) Theme.colors.onPrimary.copy(alpha = 0.18f) else IconBadgeLight),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = icon.toEmoji(), fontSize = 19.sp)
+        Text(text = icon.toEmoji(), fontSize = iconSize.sp)
     }
 }
 
