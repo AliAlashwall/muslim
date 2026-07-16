@@ -16,11 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.rememberNavController
+import com.example.muslim.navigation.AppNavHost
 import com.example.muslim.presentation.designSystem.theme.MuslimTheme
 import com.example.muslim.presentation.designSystem.theme.Theme
-import com.example.muslim.presentation.screens.prayerTimes.PrayerTimesScreen
-import com.example.muslim.presentation.screens.prayerTimes.PrayerTimesViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -50,12 +49,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     containerColor = Theme.colors.background
                 ) { innerPadding ->
-                    val viewModel: PrayerTimesViewModel = hiltViewModel()
-                    PrayerTimesScreen(
-                        viewModel = viewModel,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding))
+                    val navController = rememberNavController()
+                    AppNavHost(
+                        navController = navController,
+                        modifier = Modifier.padding(innerPadding),
+                    )
                 }
             }
         }

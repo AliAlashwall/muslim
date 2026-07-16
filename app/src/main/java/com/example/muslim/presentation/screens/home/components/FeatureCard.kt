@@ -22,7 +22,8 @@ import com.example.muslim.presentation.screens.home.HomeFeature
 fun FeatureCard(
     feature: HomeFeature,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onPrayersClicked: () -> Unit
 ) {
     Surface(
         color = Theme.colors.surface,
@@ -30,7 +31,15 @@ fun FeatureCard(
         modifier = modifier.clickable(onClick = onClick)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .padding(16.dp)
+                .clickable(
+                    onClick = {
+                        if (feature.id == 2) {
+                            onPrayersClicked()
+                        }
+                    }
+                ),
             horizontalAlignment = Alignment.Start
         ) {
             FeatureIcon(feature = feature)

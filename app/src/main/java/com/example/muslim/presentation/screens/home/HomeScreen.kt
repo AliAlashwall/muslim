@@ -4,6 +4,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,7 +71,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = hiltViewModel(),
     prayerViewModel: PrayerTimesViewModel = hiltViewModel(),
-
+    onPrayersClicked: () -> Unit = {},
     onFeatureClick: (HomeFeature) -> Unit = {}
 ) {
     val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -87,7 +88,9 @@ fun HomeScreen(
             HomeHeaderSection(
                 uiState = uiState,
                 prayersUiState = prayersUiState,
-                updateRemainingTime = { prayerViewModel.updateRemainingTime(it) }
+                updateRemainingTime = { prayerViewModel.updateRemainingTime(it) },
+                onPrayersClicked = { onPrayersClicked() }
+
             )
 
             AyahOfTheDayCard(
@@ -100,7 +103,8 @@ fun HomeScreen(
 
             FeatureGrid(
                 features = uiState.features,
-                onFeatureClick = onFeatureClick
+                onFeatureClick = onFeatureClick,
+                onPrayersClicked = { onPrayersClicked() }
             )
 
             Spacer(Modifier.height(24.dp))
@@ -113,7 +117,8 @@ fun HomeScreen(
 private fun HomeHeaderSection(
     uiState: HomeUiState,
     prayersUiState: PrayerTimesUiState,
-    updateRemainingTime: (String) -> Unit
+    updateRemainingTime: (String) -> Unit,
+    onPrayersClicked: () -> Unit
 ) {
     Surface(
         color = Theme.colors.primary,
@@ -150,7 +155,8 @@ private fun HomeHeaderSection(
 
             NextPrayerCard(
                 uiState = uiState, prayersUiState = prayersUiState,
-                updateRemainingTime = { updateRemainingTime(it) }
+                updateRemainingTime = { updateRemainingTime(it) },
+                onPrayersClicked = { onPrayersClicked() }
             )
 
         }
@@ -163,7 +169,8 @@ private fun HomeHeaderSection(
 private fun NextPrayerCard(
     uiState: HomeUiState,
     prayersUiState: PrayerTimesUiState,
-    updateRemainingTime: (String) -> Unit
+    updateRemainingTime: (String) -> Unit,
+    onPrayersClicked: () -> Unit
 ) {
 
     val closestPrayer =
@@ -179,9 +186,10 @@ private fun NextPrayerCard(
     Surface(
         color = Theme.colors.surface,
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onPrayersClicked() }
     ) {
-
         Column(modifier = Modifier.padding(18.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -301,11 +309,6 @@ private fun MiniPrayersRow(prayers: List<PrayerItem>) {
         }
     }
 }
-
-// ---------------------------------------------------------------------------------
-// Preview mocks
-// ---------------------------------------------------------------------------------
-
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)

@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +53,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.muslim.R
 import com.example.muslim.data.local.database.entity.AlarmEntity
@@ -73,8 +75,8 @@ private val ToggleGreenOn = Color(0xFF2FA671)
 @Composable
 fun PrayerTimesScreen(
     modifier: Modifier = Modifier,
-    viewModel: PrayerTimesViewModel,
-    onSettingsClick: () -> Unit = {},
+    viewModel: PrayerTimesViewModel = hiltViewModel(),
+    onBackClicked: () -> Unit = {},
 ) {
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -94,7 +96,7 @@ fun PrayerTimesScreen(
                 header = header,
                 prayers = uiState.prayers,
                 remainingTime = uiState.remainingTime ?: "",
-                onSettingsClick = onSettingsClick,
+                onSettingsClick = onBackClicked,
                 getPrayerNotifState = { viewModel.getPrayerNotifState(it) },
                 onToggleNotification = { alarm, value -> viewModel.toggleAlarm(alarm, value) },
                 updateRemainingTime = { viewModel.updateRemainingTime(it) }
@@ -133,7 +135,7 @@ fun PrayerTimesContent(
                 .fillMaxSize()
                 .background(Theme.colors.background)
         ) {
-            PrayerHeaderSection(header = header, onSettingsClick = onSettingsClick)
+            PrayerHeaderSection(header = header, onBackClicked = onSettingsClick)
 
             // Fixed: Moved animateScrollToItem into a LaunchedEffect
             LaunchedEffect(prayers) {
@@ -179,7 +181,7 @@ fun PrayerTimesContent(
 @Composable
 fun PrayerHeaderSection(
     header: PrayerHeaderInfo,
-    onSettingsClick: () -> Unit
+    onBackClicked: () -> Unit
 ) {
     Surface(
         color = Theme.colors.primary,
@@ -201,7 +203,7 @@ fun PrayerHeaderSection(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
                     tint = Theme.colors.onPrimary,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(16.dp).clickable(onClick = {onBackClicked()})
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(
@@ -219,7 +221,7 @@ fun PrayerHeaderSection(
                         style = Theme.textStyle.label.small
                     )
                 }
-                SettingsIconButton(onClick = onSettingsClick)
+                SettingsIconButton(onClick = onBackClicked)
             }
 
             Spacer(Modifier.height(18.dp))
@@ -430,7 +432,7 @@ fun PrayerRowCard(
 @Composable
 private fun PrayerTimesScreenPreview() {
     MuslimTheme {
-        PrayerHeaderSection(header = mockHeaderInfo(), onSettingsClick = {})
+        PrayerHeaderSection(header = mockHeaderInfo(), onBackClicked = {})
     }
 }
 

@@ -23,7 +23,8 @@ import com.example.muslim.presentation.screens.home.HomeFeatureAccent
 @Composable
 fun FeatureGrid(
     features: List<HomeFeature>,
-    onFeatureClick: (HomeFeature) -> Unit
+    onFeatureClick: (HomeFeature) -> Unit,
+    onPrayersClicked: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -40,7 +41,10 @@ fun FeatureGrid(
                     FeatureCard(
                         feature = feature,
                         modifier = Modifier.weight(1f),
-                        onClick = { onFeatureClick(feature) }
+                        onClick = { onFeatureClick(feature) },
+                        onPrayersClicked = {
+                            onPrayersClicked()
+                        }
                     )
                 }
                 if (rowFeatures.size < 2) {
