@@ -34,3 +34,14 @@ The app leverages the **`AlarmManager`** API for high-precision timing:
 - **Immersive Ringing Experience**: A full-screen activity that provides immediate focus when an alarm triggers.
 - **Notification Controls**: Quick actions to snooze or dismiss alarms directly from the notification shade.
 
+## 📸 Screenshots
+<img width="460" height="800" alt="image" src="https://github.com/user-attachments/assets/ecc885d5-d497-4fd5-900d-6950865f8761" />
+<img width="460" height="800" alt="image" src="https://github.com/user-attachments/assets/f9290437-7fa1-43bf-a7af-eac7521c8444" />
+<img width="460" height="800" alt="image" src="https://github.com/user-attachments/assets/e8b5d3db-4445-4d55-af22-5cefc6a7961b" />
+<img width="460" height="800" alt="image" src="https://github.com/user-attachments/assets/d99efdb0-245b-4e06-8364-4b542474efd1" />
+
+
+
+
+
+
