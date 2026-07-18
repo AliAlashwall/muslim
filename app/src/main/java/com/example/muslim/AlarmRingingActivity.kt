@@ -41,7 +41,7 @@ class AlarmRingingActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val alarmId = intent.getIntExtra("ALARM_ID", -1)
+//        val alarmId = intent.getIntExtra("ALARM_ID", -1)
         val label = intent.getStringExtra("ALARM_LABEL") ?: "Alarm"
 
         setContent {
