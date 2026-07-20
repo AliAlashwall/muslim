@@ -67,7 +67,7 @@ fun String.toPrayerAr(): String {
 
 fun Data.toHeaderInfo(): PrayerHeaderInfo {
     return PrayerHeaderInfo(
-        locationLabel = "القاهرة،   مصر",
+        locationLabel = "طنطا،   مصر",
         dayOfWeek = date.gregorian.weekday.en.convertENDayToAr(),
         gregorianDate = "${date.gregorian.day}  ${date.gregorian.month.en.convertENMonthToAr()}  ${date.gregorian.year}",
         hijriDate = "${date.hijri.day} ${date.hijri.month.ar} ${date.hijri.year}"

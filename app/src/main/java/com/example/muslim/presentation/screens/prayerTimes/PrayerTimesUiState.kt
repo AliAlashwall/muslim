@@ -70,7 +70,7 @@ fun getCachedHeaderInfo(): PrayerHeaderInfo {
     val gregorian = LocalDate.now().format(gregorianFormatter)
     val hijri = HijrahDate.now().format(hijriFormatter)
     return PrayerHeaderInfo(
-        locationLabel = "القاهرة، مصر",
+        locationLabel = "طنطا، مصر",
         dayOfWeek = LocalDate.now().dayOfWeek.name.convertENDayToAr(),
         gregorianDate = gregorian,
         hijriDate = hijri

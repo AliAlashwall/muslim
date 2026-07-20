@@ -31,7 +31,7 @@ class PrayerTimesRepositoryImpl @Inject constructor(
             }.body<PrayerTimesPerDayDTO>().toDomain()
             Log.d(
                 "PrayerTimesRepository",
-                "Prayer Times comes successfully: ${prayerTimes.data?.times}"
+                "Prayer Times comes successfully from Network: ${prayerTimes.data?.times}"
             )
             APIResult.Success(prayerTimes)
         } catch (e: Exception) {

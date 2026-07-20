@@ -102,6 +102,7 @@ class PrayerTimesViewModel @Inject constructor(
                 isIshaNotifEnable = prayerItems.find { it.name == Constants.ISHA }?.isEnable ?: true
             )
         }
+        Log.d("PrayerTimesViewModel", "Data loaded from DB")
     }
 
     private suspend fun fetchFromNetwork(currentDate: String) {
