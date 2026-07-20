@@ -10,6 +10,7 @@ import com.example.muslim.util.Constants
 import com.example.muslim.util.convertENDayToAr
 import com.example.muslim.util.convertENMonthToAr
 import com.example.muslim.util.time12Hour
+import com.example.muslim.util.toLocalTime
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun Data.toPrayerItems(): List<PrayerItem> {
@@ -18,19 +19,19 @@ fun Data.toPrayerItems(): List<PrayerItem> {
         PrayerItem(
             1,
             Constants.FAJR,
-            times.Fajr,
+            time = times.Fajr.toLocalTime().minusMinutes(9).toString(),
             PrayerIcon.FAJR,
         ),
         PrayerItem(
             2,
             Constants.DHUHR,
-            time = times.Dhuhr,
+            time = times.Dhuhr.toLocalTime().plusMinutes(1).toString(),
             PrayerIcon.DHUHR,
         ),
         PrayerItem(
             3,
             Constants.ASR,
-            times.Asr,
+            times.Asr.toLocalTime().minusMinutes(1).toString(),
             PrayerIcon.ASR,
         ),
         PrayerItem(
@@ -42,7 +43,7 @@ fun Data.toPrayerItems(): List<PrayerItem> {
         PrayerItem(
             5,
             Constants.ISHA,
-            times.Isha,
+            times.Isha.toLocalTime().plusMinutes(3).toString(),
             PrayerIcon.ISHA,
         ),
     )
