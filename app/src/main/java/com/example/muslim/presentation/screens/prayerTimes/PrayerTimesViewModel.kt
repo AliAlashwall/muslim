@@ -125,10 +125,14 @@ class PrayerTimesViewModel @Inject constructor(
                 // Save to DB in one batch if possible, or sequentially in one coroutine
                 savePrayersToDb(todayData.times)
             }
+
             is APIResult.Error -> {
                 _uiState.update { it.copy(isLoading = false, error = result.message) }
             }
-            else -> { _uiState.update { it.copy(isLoading = false) } }
+
+            else -> {
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 
@@ -138,7 +142,7 @@ class PrayerTimesViewModel @Inject constructor(
             updateAlarms(
                 1,
                 times.Fajr.get24Hours(),
-                times.Fajr.getMinutes(),
+                times.Fajr.getMinutes().minus(9), // now actual value is 23, api return 32
                 Constants.FAJR,
                 _uiState.value.isFajrNotifEnable
             )
@@ -146,14 +150,14 @@ class PrayerTimesViewModel @Inject constructor(
             updateAlarms(
                 2,
                 times.Dhuhr.get24Hours(),
-                times.Dhuhr.getMinutes(),
+                times.Dhuhr.getMinutes().plus(1), // now actual value is 03, api return 02
                 Constants.DHUHR,
                 _uiState.value.isDhuhrNotifEnable
             )
             updateAlarms(
                 3,
                 times.Asr.get24Hours(),
-                times.Asr.getMinutes(),
+                times.Asr.getMinutes().minus(1), //  now actual value is 41, api return 40
                 Constants.ASR,
                 _uiState.value.isAsrNotifEnable
             )
@@ -167,7 +171,7 @@ class PrayerTimesViewModel @Inject constructor(
             updateAlarms(
                 5,
                 times.Isha.get24Hours(),
-                times.Isha.getMinutes(),
+                times.Isha.getMinutes().plus(3),  //now actual value is 29, api return 26
                 Constants.ISHA,
                 _uiState.value.isIshaNotifEnable
             )
