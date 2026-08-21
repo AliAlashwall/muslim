@@ -1,6 +1,7 @@
 package com.example.muslim.data.service
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -22,6 +23,10 @@ import com.example.muslim.AlarmRingingActivity
 import com.example.muslim.R
 import com.example.muslim.data.receiver.AlarmActionReceiver
 
+/**
+ * AlarmService is a Foreground Service that handles the actual alarm execution:
+ * playing sound, vibrating, and showing a high-priority notification.
+ */
 class AlarmService : Service() {
 
     private var ringtone: Ringtone? = null
@@ -29,26 +34,37 @@ class AlarmService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.P)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-                val granted = ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-                Log.d("AlarmDebug", "POST_NOTIFICATIONS granted = $granted")
+        // Check for notification permissions (required for Android 13+)
+        val granted = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+        Log.d("AlarmDebug", "POST_NOTIFICATIONS granted = $granted")
 
         val alarmId = intent?.getIntExtra("ALARM_ID", -1) ?: -1
         val label = intent?.getStringExtra("ALARM_LABEL") ?: "Alarm"
 
+        // Start as a Foreground Service to ensure it isn't killed by the system
         startForeground(
             NOTIFICATION_ID,
             buildNotification(alarmId, label)
         )
+        
+        // Start playing the alarm sound (Azan)
         playSound()
+        
+        // Start the vibration pattern
         vibrate()
+        
+        // START_STICKY ensures the system attempts to recreate the service if it's killed
         return START_STICKY
     }
 
+    /**
+     * Loads and plays the alarm sound resource.
+     */
     @RequiresApi(Build.VERSION_CODES.P)
     private fun playSound() {
-//        val uri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
+        // Use a custom audio resource (Azan) for the alarm sound
         val uri = "android.resource://$packageName/${R.raw.azan_alhosary}".toUri()
         ringtone = RingtoneManager.getRingtone(this, uri).apply {
             audioAttributes = AudioAttributes.Builder()
@@ -60,14 +76,22 @@ class AlarmService : Service() {
         }
     }
 
+    /**
+     * Configures and starts the vibration pattern.
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun vibrate() {
         vibrator = getSystemService(Vibrator::class.java)
-        val pattern = longArrayOf(0, 1000, 1000)
-        vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
+        val pattern = longArrayOf(0, 1000, 1000) // Start immediately, 1s on, 1s off
+        vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0)) // 0 means repeat
     }
 
+    /**
+     * Builds the high-priority notification required for Foreground Services.
+     */
+    @SuppressLint("FullScreenIntentPolicy")
     private fun buildNotification(alarmId: Int, label: String): Notification {
+        // Intent to open the full-screen alarm activity
         val fullScreenIntent = Intent(this, AlarmRingingActivity::class.java).apply {
             putExtra("ALARM_ID", alarmId)
             putExtra("ALARM_LABEL", label)
@@ -78,6 +102,7 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Intent for the 'Dismiss' action button
         val dismissIntent = Intent(this, AlarmActionReceiver::class.java).apply {
             action = AlarmActionReceiver.ACTION_DISMISS
             putExtra("ALARM_ID", alarmId)
@@ -87,6 +112,7 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Intent for the 'Snooze' action button
         val snoozeIntent = Intent(this, AlarmActionReceiver::class.java).apply {
             action = AlarmActionReceiver.ACTION_SNOOZE
             putExtra("ALARM_ID", alarmId)
@@ -101,15 +127,16 @@ class AlarmService : Service() {
             .setContentTitle(label)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setFullScreenIntent(fullScreenPendingIntent, true)
+            .setFullScreenIntent(fullScreenPendingIntent, true) // Show activity even when locked
             .setContentIntent(fullScreenPendingIntent)
             .addAction(0, "Dismiss", dismissPendingIntent)
             .addAction(0, "Snooze", snoozePendingIntent)
-            .setOngoing(true)
+            .setOngoing(true) // Cannot be swiped away
             .build()
     }
 
     override fun onDestroy() {
+        // Stop sound and vibration when the service is stopped (Dismissed/Snoozed)
         ringtone?.stop()
         vibrator?.cancel()
         super.onDestroy()
