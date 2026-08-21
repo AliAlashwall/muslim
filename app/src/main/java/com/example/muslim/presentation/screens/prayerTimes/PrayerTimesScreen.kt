@@ -61,11 +61,11 @@ import com.example.muslim.presentation.components.PrayerIconBadge
 import com.example.muslim.presentation.components.SettingsIconButton
 import com.example.muslim.presentation.designSystem.theme.MuslimTheme
 import com.example.muslim.presentation.designSystem.theme.Theme
-import com.example.muslim.presentation.mapper.get24Hours
-import com.example.muslim.presentation.mapper.getMinutes
 import com.example.muslim.presentation.mapper.toDisplayTime
 import com.example.muslim.presentation.mapper.toPrayerAr
+import com.example.muslim.util.toLocalTime
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 
 private val TextMuted = Color(0xFFA3A3A3)
@@ -118,14 +118,14 @@ fun PrayerTimesContent(
     onToggleNotification: (alarm: AlarmEntity, enabled: Boolean) -> Unit,
     updateRemainingTime: (String) -> Unit
 ) {
-    val closestPrayerTime = prayers.find { it.status == PrayerStatus.CLOSEST }?.time
+    val closestPrayerTime = remember { prayers.find { it.status == PrayerStatus.CLOSEST }?.time }
     val listState = rememberLazyListState()
 
     LaunchedEffect(closestPrayerTime) {
         while (closestPrayerTime != null) {
             updateRemainingTime(closestPrayerTime)
             // Wait until the next minute starts to update again
-            delay(60000L - (System.currentTimeMillis() % 60000L))
+            delay((60000L - (System.currentTimeMillis() % 60000L)).milliseconds)
         }
     }
     // The design is Arabic-first, so lay the whole screen out right-to-left.
@@ -203,7 +203,9 @@ fun PrayerHeaderSection(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
                     tint = Theme.colors.onPrimary,
-                    modifier = Modifier.size(16.dp).clickable(onClick = {onBackClicked()})
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clickable(onClick = { onBackClicked() })
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(
@@ -315,7 +317,6 @@ fun PrayerRowCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
     ) {
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -385,11 +386,12 @@ fun PrayerRowCard(
                                 checked = isEnabled.value,
                                 onCheckedChange = {
                                     isEnabled.value = !isEnabled.value
+                                    val time = prayer.time.toLocalTime()
                                     val alarm = AlarmEntity(
                                         id = prayer.id,
                                         date = "",
-                                        hour = prayer.time.get24Hours(),
-                                        minute = prayer.time.getMinutes(),
+                                        hour = time.hour,
+                                        minute = time.minute,
                                         label = prayer.name,
                                         isEnabled = it
                                     )

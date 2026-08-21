@@ -18,6 +18,7 @@ import com.example.muslim.presentation.mapper.toPrayerItems
 import com.example.muslim.util.Constants
 import com.example.muslim.util.getCachedPrayers
 import com.example.muslim.util.getTimeDuration
+import com.example.muslim.util.toLocalTime
 import com.example.muslim.util.toTimes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +30,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -140,25 +140,29 @@ class PrayerTimesViewModel @Inject constructor(
 
     private fun savePrayersToDb(times: Times) {
         viewModelScope.launch(Dispatchers.IO) {
+            val fajrTime = times.Fajr.toLocalTime().minusMinutes(9)
             updateAlarms(
                 1,
-                times.Fajr.get24Hours(),
-                times.Fajr.getMinutes().minus(9), // now actual value is 23, api return 32
+                fajrTime.hour,
+                fajrTime.minute,
                 Constants.FAJR,
                 _uiState.value.isFajrNotifEnable
             )
 
+            val dhuhrTime = times.Dhuhr.toLocalTime().plusMinutes(1)
             updateAlarms(
                 2,
-                times.Dhuhr.get24Hours(),
-                times.Dhuhr.getMinutes().plus(1), // now actual value is 03, api return 02
+                dhuhrTime.hour,
+                dhuhrTime.minute,
                 Constants.DHUHR,
                 _uiState.value.isDhuhrNotifEnable
             )
+
+            val asrTime = times.Asr.toLocalTime().minusMinutes(1)
             updateAlarms(
                 3,
-                times.Asr.get24Hours(),
-                times.Asr.getMinutes().minus(1), //  now actual value is 41, api return 40
+                asrTime.hour,
+                asrTime.minute,
                 Constants.ASR,
                 _uiState.value.isAsrNotifEnable
             )
@@ -169,10 +173,12 @@ class PrayerTimesViewModel @Inject constructor(
                 Constants.MAGHRIB,
                 _uiState.value.isMaghribNotifEnable
             )
+
+            val ishaTime = times.Isha.toLocalTime().plusMinutes(3)
             updateAlarms(
                 5,
-                times.Isha.get24Hours(),
-                times.Isha.getMinutes().plus(3),  //now actual value is 29, api return 26
+                ishaTime.hour,
+                ishaTime.minute,
                 Constants.ISHA,
                 _uiState.value.isIshaNotifEnable
             )
@@ -287,11 +293,11 @@ class PrayerTimesViewModel @Inject constructor(
         val currentTime = now.toLocalTime()
 
         val prayerTimes = listOf(
-            LocalTime.of(times.Fajr.get24Hours(), times.Fajr.getMinutes()),
-            LocalTime.of(times.Dhuhr.get24Hours(), times.Dhuhr.getMinutes()),
-            LocalTime.of(times.Asr.get24Hours(), times.Asr.getMinutes()),
-            LocalTime.of(times.Maghrib.get24Hours(), times.Maghrib.getMinutes()),
-            LocalTime.of(times.Isha.get24Hours(), times.Isha.getMinutes())
+            times.Fajr.toLocalTime(),
+            times.Dhuhr.toLocalTime(),
+            times.Asr.toLocalTime(),
+            times.Maghrib.toLocalTime(),
+            times.Isha.toLocalTime()
         )
 
         return when {
