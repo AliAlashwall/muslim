@@ -306,8 +306,6 @@ fun PrayerRowCard(
     remainingTime: String? = "",
 ) {
     val isCLOSEST = remember { prayer.status == PrayerStatus.CLOSEST }
-    val titleColor = if (isCLOSEST) Theme.colors.onPrimary else Theme.colors.onSurface
-    val mutedColor = if (isCLOSEST) Theme.colors.onPrimary.copy(alpha = 0.85f) else TextMuted
     val isEnabled =
         remember(getPrayerNotifState) { mutableStateOf(getPrayerNotifState(prayer.name)) }
 
@@ -341,7 +339,7 @@ fun PrayerRowCard(
                     Column {
                         Text(
                             text = prayer.name.toPrayerAr(),
-                            color = titleColor,
+                            color = if (isCLOSEST) Theme.colors.onPrimary else Theme.colors.onSurface,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -350,14 +348,14 @@ fun PrayerRowCard(
                             isCLOSEST && remainingTime != "" ->
                                 Text(
                                     text = "متبقى $remainingTime",
-                                    color = mutedColor,
+                                    color = Theme.colors.onPrimary.copy(alpha = 0.85f),
                                     style = Theme.textStyle.label.small
                                 )
 
                             prayer.status == PrayerStatus.UPCOMING ->
                                 Text(
                                     text = stringResource(R.string.coming),
-                                    color = mutedColor,
+                                    color = if (isCLOSEST) Theme.colors.onPrimary.copy(alpha = 0.85f) else TextMuted,
                                     style = Theme.textStyle.label.small
                                 )
                         }
@@ -367,7 +365,7 @@ fun PrayerRowCard(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = prayer.time.toDisplayTime(),
-                        color = titleColor,
+                        color = if (isCLOSEST) Theme.colors.onPrimary else Theme.colors.onSurface,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -378,7 +376,7 @@ fun PrayerRowCard(
                                 text = if (isEnabled.value) {
                                     stringResource(R.string.enabled)
                                 } else stringResource(R.string.not_enabled),
-                                color = mutedColor,
+                                color = if (isCLOSEST) Theme.colors.onPrimary.copy(alpha = 0.85f) else TextMuted,
                                 fontSize = 11.sp
                             )
                             Spacer(Modifier.width(6.dp))
