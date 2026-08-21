@@ -52,7 +52,11 @@ fun String.time12Hour(): String {
     return time24.format(formatter)
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 fun String.toLocalTime(): LocalTime {
     val (hour24, minute) = this.split(":")
-    return  LocalTime.of(hour24.toInt(), minute.toInt())
+    return LocalTime.of(
+        hour24.toInt().coerceIn(0, 23),
+        minute.toInt().coerceIn(0, 59)
+    )
 }
